@@ -1,0 +1,98 @@
+<h3>방명록 리스트</h3>
+<a href="/post/new" style="float:right;display:inline-block;">
+    <button>새 글</button>
+</a>
+
+	<% if user_signed_in? %>
+	  <p>현재 로그인된 유저의 이메일 : <%= current_user.email %></p>
+	  <!-- add 17 -->
+	  <img src="<%= current_user.profile %>" class="img img-thumbnail" style="width:100px;height:100px;object-fit: cover;">
+	  <p><%= link_to "프로필", :controller => "user", :action => "profile" %> </p>
+	  <!-- end 17 -->
+	  <p><%= link_to "로그아웃", destroy_user_session_path, method: :delete, data: { confirm: "Are you sure?" } %></p>
+	<% else %>
+	  <p><%= link_to "로그인", new_user_session_path %></p>
+	<% end %>
+	
+	
+<div id="map" style="width:100%;height:400px;"></div>
+<ul>
+    <% @posts.each do |post| %>
+    <li>
+        <h4><%=post.id%>, <%=post.title%></h4>
+        
+    		<% if user_signed_in? %>
+    		  <%= link_to '수정', post_modify_path(post) if post.updatable_by? current_user %>&nbsp;
+    		  <%= link_to '삭제', post_delete_path(post), data: { confirm: 'Are you sure?' } if post.deletable_by? current_user %>
+    		<% end %>
+            <!--<a href="/post/modify?id=<%=post.id%>">수정</a>-->
+            <!--<a href="/post/delete?id=<%=post.id%>">삭제</a>-->
+            <a href="/comment/new?id=<%=post.id%>">댓글</a>
+        <hr>
+        <%=post.contents%>
+        <hr>
+        <%=post.author%>, <%=post.created_at.in_time_zone(9).to_formatted_s(:short)  %>
+        
+        <hr>
+        <ol>
+        <% post.comments.each do |comment| %>
+            <li><%=comment.contents%>, <a href="/comment/delete?id=<%=comment.id%>">X</a></li>
+        <% end %>
+        </ol>
+    </li>
+    <% end %>
+</ul>
+
+<%= will_paginate @posts, :previous_label => t("이전"), :next_label => t("다음") %>
+
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey={다음지도key}"></script>
+<script>
+	var container = document.getElementById('map');
+	var options = {
+		center: new daum.maps.LatLng(37.5241937,126.9821703),
+		level: 3
+	};
+
+	var map = new daum.maps.Map(container, options);
+	
+	// 마커를 표시할 위치와 내용을 가지고 있는 객체 배열입니다 
+	var positions = [
+    <% @posts.each do |post| %>
+    	<% if post.lng != nil and post.lat != nil %>
+	    {
+	        content: '<div style="padding:5px;width:200px; text-align:center;"><%=post.address%></div>', 
+	        latlng: new daum.maps.LatLng(<%=post.lat%>, <%=post.lng%>)
+	    },
+	    <% end %>
+	<% end %>
+	];
+	
+	
+	for (var i = 0; i < positions.length; i ++) {
+	    // 마커를 생성합니다
+	    var marker = new daum.maps.Marker({
+	        map: map, // 마커를 표시할 지도
+	        position: positions[i].latlng // 마커의 위치
+	    });
+	
+	    // 마커에 표시할 인포윈도우를 생성합니다 
+	    var infowindow = new daum.maps.InfoWindow({
+	        content: positions[i].content // 인포윈도우에 표시할 내용
+	    });
+	
+	    // 마커에 이벤트를 등록하는 함수 만들고 즉시 호출하여 클로저를 만듭니다
+	    // 클로저를 만들어 주지 않으면 마지막 마커에만 이벤트가 등록됩니다
+	    (function(marker, infowindow) {
+	        // 마커에 mouseover 이벤트를 등록하고 마우스 오버 시 인포윈도우를 표시합니다 
+	        daum.maps.event.addListener(marker, 'mouseover', function() {
+	            infowindow.open(map, marker);
+	        });
+	
+	        // 마커에 mouseout 이벤트를 등록하고 마우스 아웃 시 인포윈도우를 닫습니다
+	        daum.maps.event.addListener(marker, 'mouseout', function() {
+	            infowindow.close();
+	        });
+	    })(marker, infowindow);
+	}
+	
+</script>

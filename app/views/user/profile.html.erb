@@ -1,0 +1,13 @@
+<h1>프로필 변경</h1>
+<form action="/user/profile" method="post" enctype="multipart/form-data">
+    <%= hidden_field_tag(request_forgery_protection_token.to_s, form_authenticity_token) %>
+    <p>
+        <label for="name">이름</label>
+        <input name="name" type="text">
+    </p>
+    <p>
+        <label for="password">프로필 사진</label>
+        <input name="image" type="file">
+    </p>
+    <button type="submit">정보 수정</button>
+</form>
